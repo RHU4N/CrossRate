@@ -1,0 +1,9 @@
+.currency-code {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background-color: var(--primary-light);
+  color: var(--primary);
+  font-weight: bold;
+  font-size: 0.875rem;
+}

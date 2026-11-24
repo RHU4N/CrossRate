@@ -1,122 +1,124 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { useState } from "react";
+import { Header } from "./components/Header";
+import { Footer } from "./components/Footer";
+import { CurrencyCard } from "./components/CurrencyCard";
+import { CryptoCard } from "./components/CryptoCard";
+import useRates from "./hooks/useRates";
+import { getCurrencyName } from "./utils/format";
+import "./App.css";
 
-function App() {
-  const [count, setCount] = useState(0)
+const BASE_CURRENCIES = [
+  { code: "BRL", label: "BRL — Real brasileiro" },
+  { code: "USD", label: "USD — Dólar americano" },
+  { code: "EUR", label: "EUR — Euro" },
+];
+
+export default function App() {
+  const [baseCurrency, setBaseCurrency] = useState("BRL");
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const {
+    currencies,
+    isLoadingCurrencies,
+    currencyError,
+    cryptos,
+    isLoadingCryptos,
+    cryptoError,
+  } = useRates(baseCurrency);
+
+  // Busca local: filtra os dados já guardados no estado, sem novas requisições
+  const search = searchTerm.trim().toLowerCase();
+
+  const filteredCurrencies = currencies.filter(
+    (currency) =>
+      getCurrencyName(currency).toLowerCase().includes(search) ||
+      currency.code?.toLowerCase().includes(search),
+  );
+
+  const filteredCryptos = cryptos.filter(
+    (crypto) =>
+      crypto.name?.toLowerCase().includes(search) ||
+      crypto.symbol?.toLowerCase().includes(search),
+  );
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
+    <div className="app">
+      <Header />
+
+      <main className="main-content">
+        <section className="controls">
+          <label className="control">
+            Moeda de referência
+            <select value={baseCurrency} onChange={(event) => setBaseCurrency(event.target.value)}>
+              {BASE_CURRENCIES.map((currency) => (
+                <option key={currency.code} value={currency.code}>
+                  {currency.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="control control-search">
+            Buscar por nome ou sigla
+            <input
+              type="search"
+              placeholder="Ex.: Euro, BTC, ethereum..."
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+            />
+          </label>
+        </section>
+
+        <section className="rates-section">
+          <h2>Moedas fiduciárias</h2>
+          <p className="section-subtitle">Quanto vale 1 unidade de cada moeda em {baseCurrency}.</p>
+
+          {isLoadingCurrencies && <p className="status-message">Carregando cotações das moedas...</p>}
+
+          {!isLoadingCurrencies && currencyError && (
+            <p className="status-message status-error">{currencyError}</p>
+          )}
+
+          {!isLoadingCurrencies && !currencyError && filteredCurrencies.length === 0 && (
+            <p className="status-message">Nenhuma moeda encontrada para "{searchTerm}".</p>
+          )}
+
+          {!isLoadingCurrencies && !currencyError && filteredCurrencies.length > 0 && (
+            <div className="cards-grid">
+              {filteredCurrencies.map((currency) => (
+                <CurrencyCard key={`${currency.code}-${currency.codein}`} currency={currency} />
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="rates-section">
+          <h2>Criptomoedas</h2>
+          <p className="section-subtitle">
+            As 8 maiores por capitalização de mercado, cotadas em {baseCurrency}.
           </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
 
-      <div className="ticks"></div>
+          {isLoadingCryptos && <p className="status-message">Carregando cotações das criptomoedas...</p>}
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+          {!isLoadingCryptos && cryptoError && (
+            <p className="status-message status-error">{cryptoError}</p>
+          )}
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+          {!isLoadingCryptos && !cryptoError && filteredCryptos.length === 0 && (
+            <p className="status-message">Nenhuma criptomoeda encontrada para "{searchTerm}".</p>
+          )}
+
+          {!isLoadingCryptos && !cryptoError && filteredCryptos.length > 0 && (
+            <div className="cards-grid">
+              {filteredCryptos.map((crypto) => (
+                <CryptoCard key={crypto.id} crypto={crypto} currency={baseCurrency} />
+              ))}
+            </div>
+          )}
+        </section>
+      </main>
+
+      <Footer />
+    </div>
+  );
 }
-
-export default App

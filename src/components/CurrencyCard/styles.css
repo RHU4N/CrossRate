@@ -9,18 +9,3 @@
   font-size: 0.8rem;
   letter-spacing: 0.04em;
 }
-
-/* Quanto vale 1 bitcoin nessa moeda */
-.bitcoin-line {
-  margin: 0;
-  padding: 8px 12px;
-  border-radius: 10px;
-  background-color: var(--bitcoin-soft);
-  color: var(--text);
-  font-size: 0.85rem;
-}
-
-.bitcoin-symbol {
-  color: var(--bitcoin);
-  font-weight: 800;
-}

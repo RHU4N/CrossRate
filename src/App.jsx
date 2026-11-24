@@ -47,15 +47,19 @@ export default function App() {
       crypto.symbol?.toLowerCase().includes(search),
   );
 
-  // Preço do bitcoin na moeda de referência (vem da CoinGecko).
-  // Usamos a lista completa, e não a filtrada, para o valor não sumir durante a busca.
-  const bitcoin = cryptos.find((crypto) => crypto.id === "bitcoin");
+  // Preço de uma cripto em cada uma das outras moedas (cross rate).
+  // Ex.: se 1 BTC = R$ 356.000 e 1 USD = R$ 5,93, então 1 BTC = 356.000 ÷ 5,93 ≈ US$ 60.000.
+  // Usamos a lista completa de moedas (e não a filtrada) para os valores não sumirem durante a busca.
+  function getConversions(crypto) {
+    if (!crypto.current_price) return [];
 
-  // Cross rate: se 1 BTC = R$ 356.000 e 1 USD = R$ 5,93,
-  // então 1 BTC = 356.000 ÷ 5,93 ≈ US$ 60.000
-  function getBitcoinPrice(currency) {
-    if (!bitcoin?.current_price || !Number(currency.bid)) return null;
-    return bitcoin.current_price / Number(currency.bid);
+    return currencies
+      .filter((currency) => Number(currency.bid))
+      .map((currency) => ({
+        code: currency.code,
+        name: getCurrencyName(currency),
+        price: crypto.current_price / Number(currency.bid),
+      }));
   }
 
   // Texto do contador ao lado do título de cada seção (ex.: "8 moedas" ou "2 de 8 moedas")
@@ -121,8 +125,7 @@ export default function App() {
             )}
           </div>
           <p className="section-subtitle">
-            Quanto vale 1 unidade de cada moeda em {selectedBase.plural}. Em cada card você também vê
-            quanto custa 1 bitcoin naquela moeda.
+            Quanto vale 1 unidade de cada moeda em {selectedBase.plural}.
           </p>
 
           {isLoadingCurrencies && <p className="status-message">⏳ Buscando cotações das moedas...</p>}
@@ -138,11 +141,7 @@ export default function App() {
           {!isLoadingCurrencies && !currencyError && filteredCurrencies.length > 0 && (
             <div className="cards-grid">
               {filteredCurrencies.map((currency) => (
-                <CurrencyCard
-                  key={`${currency.code}-${currency.codein}`}
-                  currency={currency}
-                  bitcoinPrice={getBitcoinPrice(currency)}
-                />
+                <CurrencyCard key={`${currency.code}-${currency.codein}`} currency={currency} />
               ))}
             </div>
           )}
@@ -159,7 +158,8 @@ export default function App() {
             )}
           </div>
           <p className="section-subtitle">
-            As 8 maiores por valor de mercado, com preços em {selectedBase.plural}.
+            As 8 maiores por valor de mercado, com preços em {selectedBase.plural}. Em cada card, abra "Ver
+            em outras moedas" para conferir o preço nas demais moedas.
           </p>
 
           {isLoadingCryptos && <p className="status-message">⏳ Buscando cotações das criptomoedas...</p>}
@@ -175,7 +175,12 @@ export default function App() {
           {!isLoadingCryptos && !cryptoError && filteredCryptos.length > 0 && (
             <div className="cards-grid">
               {filteredCryptos.map((crypto) => (
-                <CryptoCard key={crypto.id} crypto={crypto} currency={baseCurrency} />
+                <CryptoCard
+                  key={crypto.id}
+                  crypto={crypto}
+                  currency={baseCurrency}
+                  conversions={getConversions(crypto)}
+                />
               ))}
             </div>
           )}

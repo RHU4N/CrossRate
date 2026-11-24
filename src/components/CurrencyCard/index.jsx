@@ -2,8 +2,8 @@ import { formatPrice, formatChange, getChangeClass, getCurrencyName } from "../.
 import "./styles.css";
 
 // Card de uma moeda fiduciária.
-// currency: objeto da AwesomeAPI | bitcoinPrice: quanto vale 1 BTC nessa moeda (pode ser null)
-export function CurrencyCard({ currency, bitcoinPrice }) {
+// currency: objeto da AwesomeAPI (code, codein, name, bid, high, low, pctChange)
+export function CurrencyCard({ currency }) {
   if (!currency) return null;
 
   const { code, codein, bid, high, low, pctChange } = currency;
@@ -27,13 +27,6 @@ export function CurrencyCard({ currency, bitcoinPrice }) {
           <dd>{formatPrice(low, codein)}</dd>
         </div>
       </dl>
-
-      {/* Só aparece quando a CoinGecko também respondeu */}
-      {bitcoinPrice ? (
-        <p className="bitcoin-line">
-          <span className="bitcoin-symbol">₿</span> 1 BTC ≈ <strong>{formatPrice(bitcoinPrice, code)}</strong>
-        </p>
-      ) : null}
 
       <div className="card-footer">
         <span>Variação</span>

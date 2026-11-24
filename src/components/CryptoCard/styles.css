@@ -25,3 +25,36 @@
   font-size: 0.8rem;
   font-weight: 800;
 }
+
+/* "Ver em outras moedas": lista que abre e fecha */
+.conversions {
+  border-radius: 12px;
+  background-color: var(--primary-soft);
+  font-size: 0.85rem;
+}
+
+.conversions summary {
+  padding: 8px 12px;
+  color: var(--primary-dark);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.conversions ul {
+  margin: 0;
+  padding: 0 12px 10px;
+  list-style: none;
+}
+
+.conversions li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 0;
+  border-top: 1px solid rgba(15, 118, 110, 0.12);
+}
+
+.conversions li span {
+  color: var(--muted);
+  font-weight: 700;
+}

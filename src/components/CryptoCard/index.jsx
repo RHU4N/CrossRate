@@ -3,7 +3,8 @@ import "./styles.css";
 
 // Card de uma criptomoeda.
 // crypto: objeto da CoinGecko | currency: moeda de referência usada para formatar os preços
-export function CryptoCard({ crypto, currency }) {
+// conversions: preço dessa cripto nas outras moedas ([{ code, name, price }])
+export function CryptoCard({ crypto, currency, conversions = [] }) {
   if (!crypto) return null;
 
   // Renomeia os campos da API para nomes mais fáceis de ler
@@ -43,6 +44,22 @@ export function CryptoCard({ crypto, currency }) {
           <dd>{formatPrice(low, currency)}</dd>
         </div>
       </dl>
+
+      {/* <details> abre e fecha sozinho, sem precisar de useState.
+          Só aparece quando a AwesomeAPI também respondeu. */}
+      {conversions.length > 0 && (
+        <details className="conversions">
+          <summary>Ver em outras {conversions.length} moedas</summary>
+          <ul>
+            {conversions.map((item) => (
+              <li key={item.code} title={item.name}>
+                <span>{item.code}</span>
+                <strong>≈ {formatPrice(item.price, item.code)}</strong>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
 
       <div className="card-footer">
         <span>Variação 24h</span>

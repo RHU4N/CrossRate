@@ -155,6 +155,8 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
+  /* Cada card tem a sua altura: abrir "Ver em outras moedas" não estica os vizinhos */
+  align-items: start;
 }
 
 /* Mensagens de carregamento, erro e busca vazia */

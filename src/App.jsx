@@ -4,13 +4,14 @@ import { Footer } from "./components/Footer";
 import { CurrencyCard } from "./components/CurrencyCard";
 import { CryptoCard } from "./components/CryptoCard";
 import useRates from "./hooks/useRates";
-import { getCurrencyName } from "./utils/format";
+import { getCurrencyName, formatTime } from "./utils/format";
 import "./App.css";
 
+// Moedas que o usuário pode escolher como referência
 const BASE_CURRENCIES = [
-  { code: "BRL", label: "BRL — Real brasileiro" },
-  { code: "USD", label: "USD — Dólar americano" },
-  { code: "EUR", label: "EUR — Euro" },
+  { code: "BRL", symbol: "R$", label: "Real", plural: "reais" },
+  { code: "USD", symbol: "US$", label: "Dólar", plural: "dólares" },
+  { code: "EUR", symbol: "€", label: "Euro", plural: "euros" },
 ];
 
 export default function App() {
@@ -24,9 +25,14 @@ export default function App() {
     cryptos,
     isLoadingCryptos,
     cryptoError,
+    lastUpdate,
+    refresh,
   } = useRates(baseCurrency);
 
-  // Busca local: filtra os dados já guardados no estado, sem novas requisições
+  const isLoading = isLoadingCurrencies || isLoadingCryptos;
+  const selectedBase = BASE_CURRENCIES.find((currency) => currency.code === baseCurrency);
+
+  // Busca local: filtra o que já está salvo no estado, sem fazer novas requisições
   const search = searchTerm.trim().toLowerCase();
 
   const filteredCurrencies = currencies.filter(
@@ -41,71 +47,129 @@ export default function App() {
       crypto.symbol?.toLowerCase().includes(search),
   );
 
+  // Preço do bitcoin na moeda de referência (vem da CoinGecko).
+  // Usamos a lista completa, e não a filtrada, para o valor não sumir durante a busca.
+  const bitcoin = cryptos.find((crypto) => crypto.id === "bitcoin");
+
+  // Cross rate: se 1 BTC = R$ 356.000 e 1 USD = R$ 5,93,
+  // então 1 BTC = 356.000 ÷ 5,93 ≈ US$ 60.000
+  function getBitcoinPrice(currency) {
+    if (!bitcoin?.current_price || !Number(currency.bid)) return null;
+    return bitcoin.current_price / Number(currency.bid);
+  }
+
+  // Texto do contador ao lado do título de cada seção (ex.: "8 moedas" ou "2 de 8 moedas")
+  function getCountText(shown, total, word) {
+    return search ? `${shown} de ${total} ${word}` : `${total} ${word}`;
+  }
+
+  // Texto ao lado do botão "Atualizar cotações"
+  function getUpdateText() {
+    if (isLoading) return "Buscando cotações...";
+    if (lastUpdate) return `Atualizado às ${formatTime(lastUpdate)}`;
+    return "Ainda não foi possível atualizar";
+  }
+
   return (
     <div className="app">
       <Header />
 
       <main className="main-content">
         <section className="controls">
-          <label className="control">
-            Moeda de referência
-            <select value={baseCurrency} onChange={(event) => setBaseCurrency(event.target.value)}>
+          <div className="control-row">
+            <span className="control-label">Comparar com</span>
+            <div className="base-buttons">
               {BASE_CURRENCIES.map((currency) => (
-                <option key={currency.code} value={currency.code}>
-                  {currency.label}
-                </option>
+                <button
+                  key={currency.code}
+                  type="button"
+                  className={currency.code === baseCurrency ? "base-button active" : "base-button"}
+                  aria-pressed={currency.code === baseCurrency}
+                  onClick={() => setBaseCurrency(currency.code)}
+                >
+                  <strong>{currency.symbol}</strong> {currency.label}
+                </button>
               ))}
-            </select>
-          </label>
+            </div>
+          </div>
 
-          <label className="control control-search">
-            Buscar por nome ou sigla
-            <input
-              type="search"
-              placeholder="Ex.: Euro, BTC, ethereum..."
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
-            />
-          </label>
+          <input
+            type="search"
+            className="search-input"
+            aria-label="Buscar por nome ou sigla"
+            placeholder="🔎 Buscar por nome ou sigla"
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+          />
+
+          <div className="update-row">
+            <span className="update-text">{getUpdateText()}</span>
+            <button type="button" className="refresh-button" onClick={refresh} disabled={isLoading}>
+              🔄 Atualizar cotações
+            </button>
+          </div>
         </section>
 
+        {/* ---------- Moedas fiduciárias ---------- */}
         <section className="rates-section">
-          <h2>Moedas fiduciárias</h2>
-          <p className="section-subtitle">Quanto vale 1 unidade de cada moeda em {baseCurrency}.</p>
+          <div className="section-header">
+            <h2>Moedas</h2>
+            {!isLoadingCurrencies && !currencyError && (
+              <span className="section-count">
+                {getCountText(filteredCurrencies.length, currencies.length, "moedas")}
+              </span>
+            )}
+          </div>
+          <p className="section-subtitle">
+            Quanto vale 1 unidade de cada moeda em {selectedBase.plural}. Em cada card você também vê
+            quanto custa 1 bitcoin naquela moeda.
+          </p>
 
-          {isLoadingCurrencies && <p className="status-message">Carregando cotações das moedas...</p>}
+          {isLoadingCurrencies && <p className="status-message">⏳ Buscando cotações das moedas...</p>}
 
           {!isLoadingCurrencies && currencyError && (
-            <p className="status-message status-error">{currencyError}</p>
+            <p className="status-message status-error">⚠️ {currencyError}</p>
           )}
 
           {!isLoadingCurrencies && !currencyError && filteredCurrencies.length === 0 && (
-            <p className="status-message">Nenhuma moeda encontrada para "{searchTerm}".</p>
+            <p className="status-message">🔍 Nenhuma moeda encontrada para "{searchTerm}".</p>
           )}
 
           {!isLoadingCurrencies && !currencyError && filteredCurrencies.length > 0 && (
             <div className="cards-grid">
               {filteredCurrencies.map((currency) => (
-                <CurrencyCard key={`${currency.code}-${currency.codein}`} currency={currency} />
+                <CurrencyCard
+                  key={`${currency.code}-${currency.codein}`}
+                  currency={currency}
+                  bitcoinPrice={getBitcoinPrice(currency)}
+                />
               ))}
             </div>
           )}
         </section>
 
+        {/* ---------- Criptomoedas ---------- */}
         <section className="rates-section">
-          <h2>Criptomoedas</h2>
+          <div className="section-header">
+            <h2>Criptomoedas</h2>
+            {!isLoadingCryptos && !cryptoError && (
+              <span className="section-count">
+                {getCountText(filteredCryptos.length, cryptos.length, "criptomoedas")}
+              </span>
+            )}
+          </div>
           <p className="section-subtitle">
-            As 8 maiores por capitalização de mercado, cotadas em {baseCurrency}.
+            As 8 maiores por valor de mercado, com preços em {selectedBase.plural}.
           </p>
 
-          {isLoadingCryptos && <p className="status-message">Carregando cotações das criptomoedas...</p>}
+          {isLoadingCryptos && <p className="status-message">⏳ Buscando cotações das criptomoedas...</p>}
 
           {!isLoadingCryptos && cryptoError && (
-            <p className="status-message status-error">{cryptoError}</p>
+            <p className="status-message status-error">⚠️ {cryptoError}</p>
           )}
 
           {!isLoadingCryptos && !cryptoError && filteredCryptos.length === 0 && (
-            <p className="status-message">Nenhuma criptomoeda encontrada para "{searchTerm}".</p>
+            <p className="status-message">🔍 Nenhuma criptomoeda encontrada para "{searchTerm}".</p>
           )}
 
           {!isLoadingCryptos && !cryptoError && filteredCryptos.length > 0 && (

@@ -1,9 +1,26 @@
+/* Etiqueta com a sigla da moeda (ex.: USD) */
 .currency-code {
   display: inline-block;
-  padding: 4px 10px;
-  border-radius: 6px;
-  background-color: var(--primary-light);
-  color: var(--primary);
-  font-weight: bold;
-  font-size: 0.875rem;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background-color: var(--primary-soft);
+  color: var(--primary-dark);
+  font-weight: 800;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+}
+
+/* Quanto vale 1 bitcoin nessa moeda */
+.bitcoin-line {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background-color: var(--bitcoin-soft);
+  color: var(--text);
+  font-size: 0.85rem;
+}
+
+.bitcoin-symbol {
+  color: var(--bitcoin);
+  font-weight: 800;
 }

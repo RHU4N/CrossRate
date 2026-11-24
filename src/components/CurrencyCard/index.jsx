@@ -1,11 +1,12 @@
 import { formatPrice, formatChange, getChangeClass, getCurrencyName } from "../../utils/format";
 import "./styles.css";
 
-export function CurrencyCard({ currency }) {
+// Card de uma moeda fiduciária.
+// currency: objeto da AwesomeAPI | bitcoinPrice: quanto vale 1 BTC nessa moeda (pode ser null)
+export function CurrencyCard({ currency, bitcoinPrice }) {
   if (!currency) return null;
 
   const { code, codein, bid, high, low, pctChange } = currency;
-  const currencyName = getCurrencyName(currency);
 
   return (
     <article className="card currency-card">
@@ -13,7 +14,7 @@ export function CurrencyCard({ currency }) {
         <span className="currency-code">{code}</span>
       </div>
 
-      <h3 className="card-title">{currencyName}</h3>
+      <h3 className="card-title">{getCurrencyName(currency)}</h3>
       <p className="card-price">{formatPrice(bid, codein)}</p>
 
       <dl className="card-details">
@@ -27,9 +28,17 @@ export function CurrencyCard({ currency }) {
         </div>
       </dl>
 
-      <p className="card-change">
-        Variação: <span className={`change ${getChangeClass(pctChange)}`}>{formatChange(pctChange)}</span>
-      </p>
+      {/* Só aparece quando a CoinGecko também respondeu */}
+      {bitcoinPrice ? (
+        <p className="bitcoin-line">
+          <span className="bitcoin-symbol">₿</span> 1 BTC ≈ <strong>{formatPrice(bitcoinPrice, code)}</strong>
+        </p>
+      ) : null}
+
+      <div className="card-footer">
+        <span>Variação</span>
+        <span className={`change ${getChangeClass(pctChange)}`}>{formatChange(pctChange)}</span>
+      </div>
     </article>
   );
 }

@@ -2,6 +2,8 @@
 
 Aplicação web desenvolvida em React, Vite e Axios para acompanhamento de cotações de moedas fiduciárias e criptomoedas, permitindo alternar dinamicamente a moeda de referência da comparação (*cross-rate*) entre **BRL**, **USD** e **EUR**.
 
+🌐 **Acesse online:** [crossrate-delta.vercel.app](https://crossrate-delta.vercel.app)
+
 ---
 
 ## 🎯 Objetivo acadêmico

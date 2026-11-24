@@ -22,7 +22,7 @@ Projeto desenvolvido como atividade do curso SENAI para praticar o consumo de AP
 
 * **Seleção da moeda de referência:** botões para BRL (padrão), USD ou EUR. Ao trocar, as duas listagens são recarregadas já convertidas para a moeda escolhida.
 * **Moedas fiduciárias (AwesomeAPI):** 8 moedas internacionais (USD, EUR, BRL, GBP, JPY, CHF, CAD, AUD e CNY, sem a moeda de referência) com nome, sigla, cotação atual, máxima, mínima e variação percentual.
-* **Bitcoin em cada moeda (cross rate):** cada card de moeda mostra quanto vale 1 BTC naquela moeda. O valor é calculado combinando as duas APIs, sem nenhuma requisição extra (veja a seção *Como o valor do Bitcoin é calculado*, mais abaixo).
+* **Criptomoedas em cada moeda (cross rate):** cada card de criptomoeda tem um "Ver em outras 8 moedas" que mostra o preço dela em cada uma das outras moedas da listagem. O valor é calculado combinando as duas APIs, sem nenhuma requisição extra (veja a seção *Como o preço das criptomoedas nas outras moedas é calculado*, mais abaixo).
 * **Criptomoedas (CoinGecko):** as 8 maiores por capitalização de mercado, com imagem, nome, sigla, posição no ranking, cotação atual, máxima e mínima de 24h e variação percentual de 24h.
 * **Busca (bônus):** campo que filtra as duas listagens em tempo real pelo nome ou pela sigla, usando `.filter()` sobre os dados já armazenados no estado (nenhuma requisição nova a cada tecla). Exibe mensagem quando nada é encontrado.
 * **Contador de resultados** ao lado do título de cada seção (ex.: `8 moedas` ou `2 de 8 moedas` durante a busca).
@@ -122,14 +122,14 @@ Utilizada para listar os principais criptoativos por capitalização de mercado,
 * **Modo de desenvolvimento:** o `<StrictMode>` do React executa os efeitos duas vezes ao abrir a página em `npm run dev`, dobrando as primeiras requisições. Isso não acontece no build de produção.
 * **Pares inválidos na AwesomeAPI:** se um único par da URL não existir, a API retorna `404` para a requisição inteira. Por isso o hook consulta `/available` e envia apenas pares suportados.
 * **Atualização dos dados:** as cotações não são em tempo real a cada segundo. As APIs atualizam os valores periodicamente, e a aplicação busca novos dados ao abrir a página, ao trocar a moeda de referência e ao clicar em **Atualizar cotações**.
-* **Bitcoin calculado é aproximado:** o valor de 1 BTC em cada moeda usa o câmbio da AwesomeAPI, e não o da CoinGecko, por isso aparece com `≈`. Comparando com o preço que a própria CoinGecko informa em cada moeda, a diferença medida ficou abaixo de 0,2%.
-* **O valor do Bitcoin depende das duas APIs:** se a CoinGecko falhar, os cards de moeda continuam aparecendo, só sem a linha do Bitcoin.
+* **Preço nas outras moedas é aproximado:** a conversão usa o câmbio da AwesomeAPI, e não o da CoinGecko, por isso aparece com `≈`. Nos testes, comparamos as 64 conversões (8 criptos × 8 moedas) com o preço que a própria CoinGecko informa em cada moeda: a maior diferença foi de 0,7%, a maior parte por arredondamento.
+* **A conversão depende das duas APIs:** se a AwesomeAPI falhar, os cards de criptomoeda continuam aparecendo, só sem o "Ver em outras moedas".
 
 ---
 
-## ₿ Como o valor do Bitcoin é calculado
+## 🔁 Como o preço das criptomoedas nas outras moedas é calculado
 
-A CoinGecko informa o preço do Bitcoin na moeda de referência, e a AwesomeAPI informa quanto vale cada moeda nessa mesma referência. Dividindo um pelo outro, chegamos ao preço do Bitcoin em cada moeda. É o que se chama de **cross rate** (taxa cruzada), que dá nome ao projeto:
+A CoinGecko informa o preço de cada criptomoeda na moeda de referência, e a AwesomeAPI informa quanto vale cada moeda nessa mesma referência. Dividindo um pelo outro, chegamos ao preço da cripto em cada moeda. É o que se chama de **cross rate** (taxa cruzada), que dá nome ao projeto:
 
 ```text
 1 BTC  = R$ 357.195   (CoinGecko, vs_currency=brl)
@@ -138,18 +138,23 @@ A CoinGecko informa o preço do Bitcoin na moeda de referência, e a AwesomeAPI 
 1 BTC em dólar = 357.195 ÷ 5,93 ≈ US$ 60.235
 ```
 
-No código (`App.jsx`):
+No código (`App.jsx`), cada cripto recebe a lista de conversões por props:
 
 ```js
-const bitcoin = cryptos.find((crypto) => crypto.id === "bitcoin");
+function getConversions(crypto) {
+  if (!crypto.current_price) return [];
 
-function getBitcoinPrice(currency) {
-  if (!bitcoin?.current_price || !Number(currency.bid)) return null;
-  return bitcoin.current_price / Number(currency.bid);
+  return currencies
+    .filter((currency) => Number(currency.bid))
+    .map((currency) => ({
+      code: currency.code,
+      name: getCurrencyName(currency),
+      price: crypto.current_price / Number(currency.bid),
+    }));
 }
 ```
 
-Assim não é preciso fazer nenhuma requisição a mais, o que é importante por causa do limite da CoinGecko.
+O `CryptoCard` mostra essa lista dentro de um `<details>` do HTML, que abre e fecha sem precisar de estado. Assim não é preciso fazer nenhuma requisição a mais, o que é importante por causa do limite da CoinGecko.
 
 ---
 
@@ -176,7 +181,7 @@ src/
 │   └── api.js           # Duas instâncias do Axios (AwesomeAPI e CoinGecko)
 ├── utils/
 │   └── format.js        # Formatação de preços, variações e horário
-├── App.jsx              # Página: seleção de moeda, busca, cálculo do BTC e listagens
+├── App.jsx              # Página: seleção de moeda, busca, conversões e listagens
 ├── App.css              # Estilos da página
 ├── index.css            # Paleta de cores e estilos globais dos cards
 └── main.jsx             # Ponto de entrada do React
@@ -195,9 +200,9 @@ App (useState: baseCurrency, searchTerm)
  │        └─ respostas salvas com useState (dados, carregando, erro) para cada API
  │
  ├─ .filter() pelo searchTerm (sem novas requisições)
- ├─ preço do BTC ÷ cotação da moeda = BTC em cada moeda
+ ├─ preço da cripto ÷ cotação da moeda = cripto em cada moeda
  │
- └─ .map() ──► <CurrencyCard currency={...} bitcoinPrice={...} />   <CryptoCard crypto={...} currency={...} />
+ └─ .map() ──► <CurrencyCard currency={...} />   <CryptoCard crypto={...} currency={...} conversions={...} />
 ```
 
 1. O usuário escolhe a moeda de referência; o valor fica em um `useState` no `App`.

@@ -3,8 +3,14 @@ import "./styles.css";
 export function Header() {
   return (
     <header className="header">
-      <h1>CrossRate</h1>
-      <p>Cotações de moedas e criptomoedas comparadas com a moeda de referência que você escolher.</p>
+      <span className="eyebrow">COTAÇÕES DO DIA</span>
+      <h1>
+        <span className="header-icon" aria-hidden="true">💱</span> CrossRate
+      </h1>
+      <p>
+        Escolha uma moeda de referência e veja quanto valem as principais moedas do mundo e as
+        criptomoedas mais conhecidas.
+      </p>
     </header>
   );
 }

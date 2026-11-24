@@ -1,9 +1,12 @@
 import { formatPrice, formatChange, getChangeClass } from "../../utils/format";
 import "./styles.css";
 
+// Card de uma criptomoeda.
+// crypto: objeto da CoinGecko | currency: moeda de referência usada para formatar os preços
 export function CryptoCard({ crypto, currency }) {
   if (!crypto) return null;
 
+  // Renomeia os campos da API para nomes mais fáceis de ler
   const {
     name,
     symbol,
@@ -22,7 +25,9 @@ export function CryptoCard({ crypto, currency }) {
           {image ? <img className="crypto-image" src={image} alt={`Logo ${name}`} /> : null}
           <span className="crypto-symbol">{symbol ? symbol.toUpperCase() : "—"}</span>
         </div>
-        <span className="crypto-rank">#{rank ?? "—"}</span>
+        <span className="crypto-rank" title="Posição no ranking por capitalização de mercado">
+          #{rank ?? "—"}
+        </span>
       </div>
 
       <h3 className="card-title">{name ?? "Sem nome"}</h3>
@@ -39,9 +44,10 @@ export function CryptoCard({ crypto, currency }) {
         </div>
       </dl>
 
-      <p className="card-change">
-        Variação 24h: <span className={`change ${getChangeClass(change)}`}>{formatChange(change)}</span>
-      </p>
+      <div className="card-footer">
+        <span>Variação 24h</span>
+        <span className={`change ${getChangeClass(change)}`}>{formatChange(change)}</span>
+      </div>
     </article>
   );
 }

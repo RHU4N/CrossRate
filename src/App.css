@@ -7,90 +7,210 @@
 .main-content {
   flex: 1;
   width: 100%;
-  max-width: 1100px;
+  max-width: 1160px;
   margin: 0 auto;
-  padding: 24px 20px 0;
+  padding: 0 24px;
 }
 
-/* Seleção de moeda e busca */
+/* ---------- Caixa de controles (moeda, busca e atualizar) ---------- */
 .controls {
   display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  padding: 16px;
-  background-color: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-}
-
-.control {
-  display: flex;
   flex-direction: column;
-  gap: 6px;
-  font-size: 0.9rem;
-  font-weight: bold;
-  color: var(--text-muted);
-}
-
-.control-search {
-  flex: 1;
-  min-width: 220px;
-}
-
-.control select,
-.control input {
-  padding: 10px 12px;
+  gap: 16px;
+  padding: 22px;
+  background: rgba(255, 255, 255, 0.9);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+}
+
+.control-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.control-label {
+  font-weight: 700;
+  color: var(--muted);
+}
+
+/* Botões de moeda de referência */
+.base-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.base-button {
+  min-height: 42px;
+  padding: 0 18px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background-color: var(--surface);
+  color: var(--text);
+  transition: 0.2s ease;
+}
+
+.base-button:hover {
+  border-color: var(--primary);
+  background-color: var(--primary-soft);
+}
+
+.base-button.active {
+  border-color: var(--primary);
+  background-color: var(--primary);
+  color: #ffffff;
+}
+
+/* Campo de busca */
+.search-input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
   font-size: 1rem;
-  font-weight: normal;
   color: var(--text);
   background-color: var(--surface);
+  outline: none;
+  transition: 0.2s ease;
 }
 
-.control select:focus,
-.control input:focus {
-  outline: 2px solid var(--primary);
-  outline-offset: 1px;
+.search-input::placeholder {
+  color: var(--muted);
 }
 
-/* Seções e grid de cards */
+.base-button:focus-visible,
+.refresh-button:focus-visible,
+.search-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px var(--primary-soft);
+  outline: none;
+}
+
+/* Linha com o horário e o botão de atualizar */
+.update-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.update-text {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.refresh-button {
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background-color: #f1f2f6;
+  color: var(--text);
+  font-weight: 700;
+  transition: 0.2s ease;
+}
+
+.refresh-button:hover:not(:disabled) {
+  background-color: var(--primary-soft);
+  color: var(--primary-dark);
+}
+
+.refresh-button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+/* ---------- Seções de resultados ---------- */
 .rates-section {
-  margin-top: 32px;
+  margin-top: 40px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.section-header h2 {
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
+.section-count {
+  color: var(--muted);
 }
 
 .section-subtitle {
-  margin: 4px 0 16px;
-  color: var(--text-muted);
+  margin: 4px 0 18px;
+  color: var(--muted);
 }
 
 .cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
 }
 
 /* Mensagens de carregamento, erro e busca vazia */
 .status-message {
-  padding: 16px;
+  margin: 0;
+  padding: 40px 20px;
   background-color: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  color: var(--text-muted);
+  border: 1px dashed var(--border);
+  border-radius: 18px;
+  color: var(--muted);
   text-align: center;
 }
 
 .status-error {
   border-color: var(--negative);
+  background-color: var(--negative-soft);
   color: var(--negative);
 }
 
-@media (max-width: 600px) {
-  .controls {
-    flex-direction: column;
+/* ---------- Responsividade ---------- */
+@media (max-width: 1000px) {
+  .cards-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .cards-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .main-content {
+    padding: 0 14px;
   }
 
-  .control-search {
-    min-width: 0;
+  .controls {
+    padding: 16px;
+  }
+
+  /* Botões de moeda dividem a largura igualmente */
+  .base-buttons {
+    width: 100%;
+  }
+
+  .base-button {
+    flex: 1;
+    padding: 0 8px;
+  }
+
+  .refresh-button {
+    width: 100%;
+  }
+
+  .cards-grid {
+    grid-template-columns: 1fr;
   }
 }

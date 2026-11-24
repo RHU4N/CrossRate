@@ -20,16 +20,19 @@ Projeto desenvolvido como atividade do curso SENAI para praticar o consumo de AP
 
 ## ✅ Funcionalidades
 
-* **Seleção da moeda de referência:** BRL (padrão), USD ou EUR. Ao trocar, as duas listagens são recarregadas já convertidas para a moeda escolhida.
+* **Seleção da moeda de referência:** botões para BRL (padrão), USD ou EUR. Ao trocar, as duas listagens são recarregadas já convertidas para a moeda escolhida.
 * **Moedas fiduciárias (AwesomeAPI):** 8 moedas internacionais (USD, EUR, BRL, GBP, JPY, CHF, CAD, AUD e CNY, sem a moeda de referência) com nome, sigla, cotação atual, máxima, mínima e variação percentual.
+* **Bitcoin em cada moeda (cross rate):** cada card de moeda mostra quanto vale 1 BTC naquela moeda. O valor é calculado combinando as duas APIs, sem nenhuma requisição extra (veja a seção *Como o valor do Bitcoin é calculado*, mais abaixo).
 * **Criptomoedas (CoinGecko):** as 8 maiores por capitalização de mercado, com imagem, nome, sigla, posição no ranking, cotação atual, máxima e mínima de 24h e variação percentual de 24h.
 * **Busca (bônus):** campo que filtra as duas listagens em tempo real pelo nome ou pela sigla, usando `.filter()` sobre os dados já armazenados no estado (nenhuma requisição nova a cada tecla). Exibe mensagem quando nada é encontrado.
+* **Contador de resultados** ao lado do título de cada seção (ex.: `8 moedas` ou `2 de 8 moedas` durante a busca).
+* **Atualizar cotações:** botão que busca os dados de novo e mostra o horário da última atualização.
 * **Feedback ao usuário:**
   * mensagem de carregamento em cada listagem;
   * mensagem amigável de erro;
   * as duas APIs são tratadas de forma **independente**: se uma falhar, a outra listagem continua funcionando;
   * valores ausentes são exibidos como `—`;
-  * variação positiva em verde e negativa em vermelho.
+  * variação positiva em verde (▲) e negativa em vermelho (▼); a seta ajuda quem tem dificuldade para diferenciar cores.
 * **Layout responsivo** com cards em grid (computador e celular).
 
 ---
@@ -114,10 +117,39 @@ Utilizada para listar os principais criptoativos por capitalização de mercado,
 
 ## ⚠️ Limitações das APIs
 
-* **Limite de requisições da CoinGecko:** a API pública (sem chave) aceita poucas requisições por minuto. Trocar de moeda muitas vezes seguidas pode estourar o limite. Nesse caso a API responde `429` **sem o cabeçalho CORS**, então o navegador só enxerga um erro de rede. A aplicação mostra uma mensagem pedindo para aguardar e a listagem de moedas continua funcionando normalmente.
-* **Modo de desenvolvimento:** o `<StrictMode>` do React executa os efeitos duas vezes em `npm run dev`, dobrando as requisições. Isso não acontece no build de produção.
+* **Limite de requisições da CoinGecko:** a API pública (sem chave) aceita poucas requisições por minuto. Nos testes, o bloqueio apareceu depois de umas 4 chamadas feitas em poucos segundos. Quando isso acontece, a API responde `429` **sem o cabeçalho CORS**, então o navegador só enxerga um erro de rede. A aplicação mostra uma mensagem pedindo para aguardar e a listagem de moedas continua funcionando normalmente.
+  * Para diminuir o problema, o hook guarda a resposta da CoinGecko de cada moeda por **1 minuto**. Voltar para uma moeda já consultada (ex.: BRL → USD → BRL) não faz uma requisição nova. O botão **Atualizar cotações** ignora esse cache.
+* **Modo de desenvolvimento:** o `<StrictMode>` do React executa os efeitos duas vezes ao abrir a página em `npm run dev`, dobrando as primeiras requisições. Isso não acontece no build de produção.
 * **Pares inválidos na AwesomeAPI:** se um único par da URL não existir, a API retorna `404` para a requisição inteira. Por isso o hook consulta `/available` e envia apenas pares suportados.
-* **Atualização dos dados:** as cotações não são em tempo real a cada segundo. As APIs atualizam os valores periodicamente, e a aplicação busca novos dados ao abrir a página e ao trocar a moeda de referência.
+* **Atualização dos dados:** as cotações não são em tempo real a cada segundo. As APIs atualizam os valores periodicamente, e a aplicação busca novos dados ao abrir a página, ao trocar a moeda de referência e ao clicar em **Atualizar cotações**.
+* **Bitcoin calculado é aproximado:** o valor de 1 BTC em cada moeda usa o câmbio da AwesomeAPI, e não o da CoinGecko, por isso aparece com `≈`. Comparando com o preço que a própria CoinGecko informa em cada moeda, a diferença medida ficou abaixo de 0,2%.
+* **O valor do Bitcoin depende das duas APIs:** se a CoinGecko falhar, os cards de moeda continuam aparecendo, só sem a linha do Bitcoin.
+
+---
+
+## ₿ Como o valor do Bitcoin é calculado
+
+A CoinGecko informa o preço do Bitcoin na moeda de referência, e a AwesomeAPI informa quanto vale cada moeda nessa mesma referência. Dividindo um pelo outro, chegamos ao preço do Bitcoin em cada moeda. É o que se chama de **cross rate** (taxa cruzada), que dá nome ao projeto:
+
+```text
+1 BTC  = R$ 357.195   (CoinGecko, vs_currency=brl)
+1 USD  = R$ 5,93      (AwesomeAPI, par USD-BRL)
+
+1 BTC em dólar = 357.195 ÷ 5,93 ≈ US$ 60.235
+```
+
+No código (`App.jsx`):
+
+```js
+const bitcoin = cryptos.find((crypto) => crypto.id === "bitcoin");
+
+function getBitcoinPrice(currency) {
+  if (!bitcoin?.current_price || !Number(currency.bid)) return null;
+  return bitcoin.current_price / Number(currency.bid);
+}
+```
+
+Assim não é preciso fazer nenhuma requisição a mais, o que é importante por causa do limite da CoinGecko.
 
 ---
 
@@ -143,8 +175,8 @@ src/
 ├── services/
 │   └── api.js           # Duas instâncias do Axios (AwesomeAPI e CoinGecko)
 ├── utils/
-│   └── format.js        # Formatação de preços e variações (compartilhada pelos cards)
-├── App.jsx              # Página: seleção de moeda, busca e listagens
+│   └── format.js        # Formatação de preços, variações e horário
+├── App.jsx              # Página: seleção de moeda, busca, cálculo do BTC e listagens
 ├── App.css              # Estilos da página
 ├── index.css            # Paleta de cores e estilos globais dos cards
 └── main.jsx             # Ponto de entrada do React
@@ -157,18 +189,19 @@ src/
 ```text
 App (useState: baseCurrency, searchTerm)
  │
- ├─ useRates(baseCurrency) ── useEffect [baseCurrency] ──► awesomeApi.get("/available") + ("/last/...")
- │                         └─ useEffect [baseCurrency] ──► coinGeckoApi.get("/coins/markets", { params })
+ ├─ useRates(baseCurrency) ── useEffect [baseCurrency, refreshCount] ──► awesomeApi.get("/available") + ("/last/...")
+ │                         └─ useEffect [baseCurrency, refreshCount] ──► coinGeckoApi.get("/coins/markets", { params })
  │        │
  │        └─ respostas salvas com useState (dados, carregando, erro) para cada API
  │
  ├─ .filter() pelo searchTerm (sem novas requisições)
+ ├─ preço do BTC ÷ cotação da moeda = BTC em cada moeda
  │
- └─ .map() ──► <CurrencyCard currency={...} />   <CryptoCard crypto={...} currency={...} />
+ └─ .map() ──► <CurrencyCard currency={...} bitcoinPrice={...} />   <CryptoCard crypto={...} currency={...} />
 ```
 
 1. O usuário escolhe a moeda de referência; o valor fica em um `useState` no `App`.
-2. O hook `useRates` recebe essa moeda. Seus dois `useEffect` têm `baseCurrency` como dependência e são executados de novo sempre que ela muda.
+2. O hook `useRates` recebe essa moeda. Seus dois `useEffect` têm `baseCurrency` e `refreshCount` como dependências, então são executados de novo quando a moeda muda ou quando o usuário clica em **Atualizar cotações** (que soma 1 ao `refreshCount`).
 3. Cada efeito usa sua instância do Axios (`src/services/api.js`), liga o carregamento, faz a requisição e guarda o resultado (ou a mensagem de erro) em `useState`. Cada API tem seus próprios estados, por isso uma falha não afeta a outra.
 4. Uma variável `ignore` na função de limpeza do `useEffect` descarta respostas antigas caso o usuário troque de moeda antes da requisição anterior terminar.
 5. O `App` aplica a busca com `.filter()` e renderiza os cards com `.map()`, usando `key` estáveis (`code-codein` para moedas e `id` para criptomoedas). Os cards recebem os dados por props.
